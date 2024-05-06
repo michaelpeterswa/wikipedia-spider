@@ -35,7 +35,7 @@ services:
       WS_SPIDER_MAX_DEPTH: "3"
 
       # postgres
-      WS_POSTGRES_CONN_STRING: "postgres://postgres:example@postgres:5432/postgres?sslmode=disable"
+      WS_POSTGRES_CONN_STRING: "postgres://postgres:example@postgres:5432/postgres?sslmode=disable" # yamllint disable-line rule:line-length
 
       # grpc (otlp tracing)
       GRPC_GO_LOG_VERBOSITY_LEVEL: 99
