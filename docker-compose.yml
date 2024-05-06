@@ -4,25 +4,38 @@ version: "3.3"
 services:
   main:
     build: .
+    depends_on:
+      seedpostgresdb:
+        condition: service_completed_successfully
     ports:
       - "8081:8081"
     environment:
       # setting up koanf prefix to read environment variables
-      CONFIG_PREFIX: "GS_"
+      CONFIG_PREFIX: "WS_"
 
       # logging
-      GS_LOG_LEVEL: "info"
+      WS_LOG_LEVEL: "debug"
 
       # metrics
-      GS_METRICS_ENABLED: "true"
-      GS_METRICS_PORT: "8081"
+      WS_METRICS_ENABLED: "true"
+      WS_METRICS_PORT: "8081"
 
       # tracing
-      GS_TRACING_ENABLED: "false"
-      GS_TRACING_SAMPLERATE: "1.0"
-      GS_TRACING_SERVICE: "go-start"
-      GS_TRACING_VERSION: "0.0.1"
+      WS_TRACING_ENABLED: "false"
+      WS_TRACING_SAMPLERATE: "1.0"
+      WS_TRACING_SERVICE: "wikipedia-spider"
+      WS_TRACING_VERSION: "0.0.1"
       OTEL_EXPORTER_OTLP_ENDPOINT: "http://tempo:4317"
+
+      # spider
+      WS_SPIDER_USER_AGENT: "github.com/michaelpeterswa/wikipedia-spider"
+      WS_SPIDER_ALLOWED_DOMAINS: "en.wikipedia.org"
+      WS_SPIDER_URL_BASE: "https://en.wikipedia.org"
+      WS_SPIDER_START_SLUG: "/wiki/North_Bend,_Washington"
+      WS_SPIDER_MAX_DEPTH: "3"
+
+      # postgres
+      WS_POSTGRES_CONN_STRING: "postgres://postgres:example@postgres:5432/postgres?sslmode=disable" # yamllint disable-line rule:line-length
 
       # grpc (otlp tracing)
       GRPC_GO_LOG_VERBOSITY_LEVEL: 99
@@ -58,3 +71,35 @@ services:
       - GF_FEATURE_TOGGLES_ENABLE=traceqlEditor
     ports:
       - "3000:3000"
+
+  postgres:
+    image: postgres
+    # set shared memory limit when using docker-compose
+    shm_size: 128mb
+    environment:
+      POSTGRES_PASSWORD: example
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+
+  seedpostgresdb:
+    image: migrate/migrate
+    volumes:
+      - ./docker/postgres/migrations:/migrations
+    entrypoint: >
+      /bin/sh -c 'sleep 5 && migrate -path=/migrations/ -database
+      "postgres://postgres:example@postgres:5432/postgres?sslmode=disable" up'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  pgadmin:
+    image: dpage/pgadmin4
+    ports:
+      - "8082:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+    volumes:
+      - ./docker/pgadmin/servers.json:/pgadmin4/servers.json
