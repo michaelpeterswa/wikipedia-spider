@@ -18,6 +18,14 @@ const (
 	TracingSampleRate = "tracing.samplerate"
 	TracingService    = "tracing.service"
 	TracingVersion    = "tracing.version"
+
+	SpiderUserAgent      = "spider.user.agent"
+	SpiderAllowedDomains = "spider.allowed.domains"
+	SpiderURLBase        = "spider.url.base"
+	SpiderStartSlug      = "spider.start.slug"
+	SpiderMaxDepth       = "spider.max.depth"
+
+	PostgresConnString = "postgres.conn.string"
 )
 
 func NewConfig() (*koanf.Koanf, error) {
