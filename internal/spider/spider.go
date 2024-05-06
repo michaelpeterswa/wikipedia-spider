@@ -118,7 +118,10 @@ func NewSpider(ctx context.Context, db *db.DBClient, sc *SpiderConfig, job_id *u
 
 				if link == nil {
 					linkID := uuid.New()
-					db.InsertLink(ctx, &linkID, job_id, fullLink, e.Request.Ctx.Get("page-title"))
+					err := db.InsertLink(ctx, &linkID, job_id, fullLink, e.Request.Ctx.Get("page-title"))
+					if err != nil {
+						slog.Error("could not insert link", slog.String("url", fullLink), slog.String("error", err.Error()))
+					}
 				}
 
 				err = e.Request.Visit(anchor)
@@ -136,9 +139,12 @@ func NewSpider(ctx context.Context, db *db.DBClient, sc *SpiderConfig, job_id *u
 		}
 	})
 
-	spider.Limit(&colly.LimitRule{
+	err := spider.Limit(&colly.LimitRule{
 		Delay: 10 * time.Second,
 	})
+	if err != nil {
+		slog.Error("could not set rate limit", slog.String("error", err.Error()))
+	}
 
 	return &Spider{
 		spider: spider,
